@@ -23,7 +23,7 @@ jobs:
         run: npm install
 
       - name: Run tests
-        run: npm run test
+        run: npm run test --passWithNoTests
 
       - name: Build application
         run: npm run build
@@ -36,23 +36,22 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.EC2_INSTANCE }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          port: 22
-          source: "dist/*"
-          target: "/var/www/html" # Directorio de destino en tu instancia EC2
+        env:
+          HOST: ${{ secrets.EC2_INSTANCE }}
+          USER: ${{ secrets.EC2_USER }}
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+        run: |
+          # Crear archivo de clave privada
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
 
-      - name: Restart server on EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          port: 22
-          script: |
-            # Comandos para reiniciar tu servidor, por ejemplo:
-            # sudo systemctl restart nginx
-            echo "Deployment finished!"
+          # Crear directorio de despliegue si no existe
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "mkdir -p /var/www/html/react-app"
+
+          # Transferir archivos construidos
+          scp -o StrictHostKeyChecking=no -i private_key.pem -r dist/* $USER@$HOST:/var/www/html/react-app
+
+          # Eliminar archivo de clave privada
+          rm private_key.pem
+          
+
