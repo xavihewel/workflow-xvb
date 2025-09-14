@@ -44,14 +44,14 @@ jobs:
           # Crear archivo de clave privada
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
-
+        
           # Crear directorio de despliegue si no existe
-          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "mkdir -p /var/www/html/react-app"
-
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST 'mkdir -p react-app'
+        
           # Transferir archivos construidos
-          scp -o StrictHostKeyChecking=no -i private_key.pem -r dist/* $USER@$HOST:/var/www/html/react-app
-
-          # Eliminar archivo de clave privada
-          rm private_key.pem
+          scp -o StrictHostKeyChecking=no -i private_key.pem -r build/* $USER@$HOST:react-app
+        
+          # Limpiar archivo de clave
+          rm -f private_key.pem
           
 
